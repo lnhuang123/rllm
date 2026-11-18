@@ -126,6 +126,9 @@ class Step(BaseModel):
     response_ids: list[int] = Field(default_factory=list)
     logprobs: list[float] = Field(default_factory=list)
     routing_matrices: list[str] | None = None  # per-token routing matrices (R3, transient)
+    rollout_topk_ids: list[list[int]] | None = None
+    rollout_topk_log_probs: list[list[float]] | None = None
+    rollout_support_complete: list[bool] | None = None
     chat_completions: list[dict[str, Any]] = Field(default_factory=list)
     observation: Any = None
     thought: str = ""
@@ -159,6 +162,9 @@ class Step(BaseModel):
             self.logprobs = self.model_output.logprobs
         if self.routing_matrices is None and getattr(self.model_output, "routing_matrices", None) is not None:
             self.routing_matrices = self.model_output.routing_matrices
+        for name in ("rollout_topk_ids", "rollout_topk_log_probs", "rollout_support_complete"):
+            if getattr(self, name) is None:
+                setattr(self, name, getattr(self.model_output, name, None))
         if self.weight_version is None and hasattr(self.model_output, "weight_version"):
             self.weight_version = self.model_output.weight_version
 
@@ -184,6 +190,9 @@ class Step(BaseModel):
             "prompt_ids": self.prompt_ids,
             "response_ids": self.response_ids,
             "logprobs": self.logprobs,
+            "rollout_topk_ids": self.rollout_topk_ids,
+            "rollout_topk_log_probs": self.rollout_topk_log_probs,
+            "rollout_support_complete": self.rollout_support_complete,
             "routing_matrices": self.routing_matrices,
             "chat_completions": _serialize_value(self.chat_completions),
             "observation": self.observation,
@@ -207,6 +216,9 @@ class Step(BaseModel):
             prompt_ids=data["prompt_ids"],
             response_ids=data["response_ids"],
             logprobs=data["logprobs"],
+            rollout_topk_ids=data.get("rollout_topk_ids"),
+            rollout_topk_log_probs=data.get("rollout_topk_log_probs"),
+            rollout_support_complete=data.get("rollout_support_complete"),
             routing_matrices=data.get("routing_matrices"),
             chat_completions=data["chat_completions"],
             observation=data["observation"],
@@ -228,6 +240,9 @@ class Step(BaseModel):
             prompt_ids=model_output.prompt_ids or [],
             response_ids=model_output.completion_ids or [],
             logprobs=model_output.logprobs or [],
+            rollout_topk_ids=getattr(model_output, "rollout_topk_ids", None),
+            rollout_topk_log_probs=getattr(model_output, "rollout_topk_log_probs", None),
+            rollout_support_complete=getattr(model_output, "rollout_support_complete", None),
             routing_matrices=getattr(model_output, "routing_matrices", None),
             chat_completions=(messages or []) + [{"role": "assistant", "content": model_output.content, "reasoning": model_output.reasoning}],
             thought=model_output.reasoning or "",

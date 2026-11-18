@@ -32,6 +32,10 @@ class VerlTaskRunner(TaskRunner):
 
         print(f"VerlTaskRunner hostname: {socket.gethostname()}, PID: {os.getpid()}")
         sync_config(config, hydra_overrides=hydra_overrides)
+        if config.rllm.algorithm.get("score_centering", {}).get("enabled", False):
+            from rllm.trainer.verl.sc_config import validate_score_centering_config
+
+            validate_score_centering_config(config)
         OmegaConf.resolve(config)
         pprint(OmegaConf.to_container(config))
 
@@ -136,7 +140,15 @@ class VerlTrainerLauncher(TrainerLauncher):
             hydra_overrides = []
 
         try:
-            runner = VerlTaskRunner.remote()  # type: ignore
+            runner_cls = VerlTaskRunner
+            if self.config.rllm.algorithm.get("score_centering", {}).get("enabled", False):
+                runner_cls = runner_cls.options(
+                    runtime_env={
+                        "env_vars": {"RLLM_SCORE_CENTERING": "1"},
+                        "worker_process_setup_hook": "rllm.trainer.verl.patch.apply_all_verl_patches",
+                    }
+                )
+            runner = runner_cls.remote()
 
             ray.get(
                 runner.run.remote(

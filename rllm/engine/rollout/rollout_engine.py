@@ -22,6 +22,9 @@ class ModelOutput:
     completion_ids: list[int] | None = None
     multi_modal_inputs: dict[str, list] | None = None
     logprobs: list[float] | None = None  # completion logprobs
+    rollout_topk_ids: list[list[int]] | None = None
+    rollout_topk_log_probs: list[list[float]] | None = None
+    rollout_support_complete: list[bool] | None = None
     prompt_logprobs: list[float] | None = None  # prompt logprobs aligned to prompt_ids
     routing_matrices: list[str] | None = None  # per-token routing matrices (R3, transient)
     prompt_length: int = 0
@@ -41,6 +44,9 @@ class ModelOutput:
             "multi_modal_inputs": self.multi_modal_inputs,
             "logprobs": self.logprobs,
             "prompt_logprobs": self.prompt_logprobs,
+            "rollout_topk_ids": self.rollout_topk_ids,
+            "rollout_topk_log_probs": self.rollout_topk_log_probs,
+            "rollout_support_complete": self.rollout_support_complete,
             "routing_matrices": self.routing_matrices,
             "prompt_length": self.prompt_length,
             "completion_length": self.completion_length,
@@ -63,6 +69,9 @@ class ModelOutput:
             multi_modal_inputs=data.get("multi_modal_inputs"),
             logprobs=data.get("logprobs"),
             prompt_logprobs=data.get("prompt_logprobs"),
+            rollout_topk_ids=data.get("rollout_topk_ids"),
+            rollout_topk_log_probs=data.get("rollout_topk_log_probs"),
+            rollout_support_complete=data.get("rollout_support_complete"),
             routing_matrices=data.get("routing_matrices"),
             prompt_length=data.get("prompt_length", 0),
             completion_length=data.get("completion_length", 0),

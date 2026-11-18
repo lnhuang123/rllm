@@ -296,6 +296,15 @@ def apply_all_verl_patches() -> None:
         except Exception:  # pragma: no cover — patch is best-effort
             logger.exception(f"{patch_name} failed in worker setup hook")
 
+    import os
+
+    if os.environ.get("RLLM_SCORE_CENTERING") == "1":
+        from rllm.trainer.verl.sc_fsdp_adapter import install_fsdp_adapter
+        from rllm.trainer.verl.sc_rollout_adapter import install_rollout_adapter
+
+        install_fsdp_adapter()
+        install_rollout_adapter()
+
     _run_extra_worker_setup_hook()
 
 
